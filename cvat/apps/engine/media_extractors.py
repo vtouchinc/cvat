@@ -22,6 +22,7 @@ from PIL import Image, ImageFile, ImageOps
 from random import shuffle
 from cvat.apps.engine.utils import rotate_image
 from cvat.apps.engine.models import DimensionType, SortingMethod
+from .log import ServerLogManager
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -31,6 +32,8 @@ from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
 
 ORIENTATION_EXIF_TAG = 274
+
+slogger = ServerLogManager(__name__)
 
 class ORIENTATION(IntEnum):
     NORMAL_HORIZONTAL=1
@@ -266,6 +269,31 @@ class ArchiveReader(DirectoryReader):
         self._archive_source = source_path[0]
         tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
         Archive(self._archive_source).extractall(tmp_dir)
+        if not extract_dir:
+            os.remove(self._archive_source)
+        super().__init__(
+            source_path=[tmp_dir],
+            step=step,
+            start=start,
+            stop=stop,
+            dimension=dimension,
+            sorting_method=sorting_method,
+        )
+
+class VtdReader(DirectoryReader):
+    def __init__(self,
+                source_path,
+                step=1,
+                start=0,
+                stop=None,
+                dimension=DimensionType.DIM_2D,
+                sorting_method=SortingMethod.LEXICOGRAPHICAL,
+                extract_dir=None):
+
+        self._archive_source = source_path[0]
+        tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
+        slogger.glob.info( "vtd : extracted to " + str(tmp_dir) )
+        # Archive(self._archive_source).extractall(tmp_dir)
         if not extract_dir:
             os.remove(self._archive_source)
         super().__init__(
@@ -864,6 +892,14 @@ def _is_zip(path):
     supportedArchives = ['application/zip']
     return mime_type in supportedArchives or encoding in supportedArchives
 
+def _is_vtd(path):
+    mime = mimetypes.guess_type(path)
+    mime_type = mime[0]
+    encoding = mime[1]
+    supportedArchives = ['application/vtd']
+    return mime_type in supportedArchives or encoding in supportedArchives
+
+
 # 'has_mime_type': function receives 1 argument - path to file.
 #                  Should return True if file has specified media type.
 # 'extractor': class that extracts images from specified media.
@@ -906,6 +942,12 @@ MEDIA_TYPES = {
     'zip': {
         'has_mime_type': _is_zip,
         'extractor': ZipReader,
+        'mode': 'annotation',
+        'unique': True,
+    },
+    'vtd': {
+        'has_mime_type': _is_vtd,
+        'extractor': VtdReader,
         'mode': 'annotation',
         'unique': True,
     }

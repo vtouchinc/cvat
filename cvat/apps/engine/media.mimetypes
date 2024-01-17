@@ -223,5 +223,8 @@ application/x-tzo tar.lzo
 application/x-xz-compressed-tar txz
 application/zip zip
 
+# VTD
+application/vtd vtd
+
 # PDF
 application/pdf pdf

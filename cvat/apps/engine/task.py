@@ -249,7 +249,7 @@ def _validate_data(counter, manifest_files=None):
             else:
                 multiple_entries += len(counter[media_type])
 
-            if manifest_files and media_type not in ('video', 'image', 'zip', 'archive'):
+            if manifest_files and media_type not in ('video', 'image', 'zip', 'archive', 'vtd'):
                 raise Exception(
                     'File with meta information can only be uploaded with video/images/archives'
                 )
@@ -747,7 +747,7 @@ def _create_thread(
             'start': db_data.start_frame,
             'stop': data['stop_frame'],
         }
-        if media_type in {'archive', 'zip', 'pdf'} and db_data.storage == models.StorageChoice.SHARE:
+        if media_type in {'archive', 'zip', 'pdf', 'vtd'} and db_data.storage == models.StorageChoice.SHARE:
             details['extract_dir'] = db_data.get_upload_dirname()
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
@@ -1053,6 +1053,7 @@ def _create_thread(
                     MEDIA_TYPES['zip']['extractor'],
                     MEDIA_TYPES['pdf']['extractor'],
                     MEDIA_TYPES['archive']['extractor'],
+                    MEDIA_TYPES['vtd']['extractor'],
                 ))):
                 chunk_data = preload_images(chunk_data)
 
