@@ -24,23 +24,7 @@ from cvat.apps.engine.utils import rotate_image
 from cvat.apps.engine.models import DimensionType, SortingMethod
 from .log import ServerLogManager
 
-import png
 import subprocess
-
-def makePng(path):
-    # https://stackoverflow.com/a/55715162
-    width = 255
-    height = 255
-    img = []
-    for y in range(height):
-        row = ()
-        for x in range(width):
-            row = row + (x, max(0, 255 - x - y), y)
-        img.append(row)
-    with open(path, 'wb') as f:
-        w = png.Writer(width, height, greyscale=False)
-        w.write(f, img)
-
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -321,9 +305,8 @@ class VtdReader(DirectoryReader):
 
         slogger.glob.info( "vtd : after make folder " )
 
-        for i in range(start, 50):
-            makePng( tmp_dir + "/" + str(i) + ".png" )
-
+        from cvat.apps.engine.vtd_extractor import extract_vtd
+        extract_vtd(source_path[0], tmp_dir)
         ################### TODO
 
         # Archive(self._archive_source).extractall(tmp_dir)
